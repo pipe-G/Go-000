@@ -5,7 +5,16 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"time"
-	goqu "gopkg.in/doug-martin/goqu.v5"
+	_ "github.com/go-sql-driver/mysql"
+)
+
+const(
+	USERNAME="root"
+	PASSWORD="123456"
+	NETWORK="tcp"
+	SERVER="127.0.0.1"
+	PORT="3306"
+	DATABASE="test"
 )
 
 type Order struct{
@@ -14,35 +23,23 @@ type Order struct{
 	UpdatedAt *time.Time
 }
 
-func (t Order) TableName() string {
-	return "Order"
-}
-
-
-func OrderBuilder(params map[string]interface{}) *goqu.Dataset {
-	return db.DB.Goqu.From(goqu.I(Order{}.TableName()).As("o")).
-		Where(
-			db.QueryFilter(params).
-				Where("o.order_id", db.EQ, "OrderID").
-				End()...,
-		).Order(goqu.I("o.created_at").Desc())
-}
-
-func GetOrder(params map[string]interface{}) (*Order, error) {
-	var (
-		order Order
-	)
-	builder := OrderBuilder(params)
-	if err := db.DB.QueryFirst(builder, &order); err != nil {
+func GetOrder(OrderID string) (*Order, error) {
+	connection:=fmt.Sprintf("%s:%s@%s(%s:%d)/%s",USERNAME,PASSWORD,NETWORK,SERVER,PORT,DATABASE)
+	db,err:=sql.Open("mysql",connection)
+	if err !=nil{
+		return nil, errors.Wrapf(err,"connection failure")
+	}
+	defer  db.Close()
+	row :=db.QueryRow("select * from order where OrderID=?",OrderID)
+	order :=new(Order)
+	if err := row.Scan(&order.OrderID,&order.CreatedAt,&order.UpdatedAt); err != nil {
 		return nil, errors.Wrapf(err,"data not found")
 	}
-	return &order, nil
+	return order, nil
 }
 
 func OrderService()(*Order,error) {
-	return GetOrder(map[string]interface{}{
-		"OutOrderID": "11111111",
-	})
+	return GetOrder("1111111111")
 }
 
 func main() {
