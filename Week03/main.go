@@ -26,17 +26,20 @@ func LinuxSignal(ctx context.Context) error {
 }
 
 func startServer(ctx context.Context, addr string, h http.Handler) error {
-	s := http.Server{
+	srv := http.Server{
 		Addr:    addr,
 		Handler: h,
 	}
 	go func(ctx context.Context) {
 		<-ctx.Done()
 		fmt.Println("http return channel")
-		s.Shutdown(context.Background())
+		err := srv.Shutdown(context.Background())
+		if err != nil {
+			fmt.Println(err)
+		}
 	}(ctx)
-	fmt.Println("http start")
-	return s.ListenAndServe()
+	fmt.Println("listening at " + addr)
+	return srv.ListenAndServe()
 }
 
 type HelloHandlerStruct struct {
