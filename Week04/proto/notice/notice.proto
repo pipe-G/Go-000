@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package notice;
+
+option go_package = "Week4/proto/notice";
+
+
+message Empty {}
+message SendEmailReq {
+  int64 UserID = 1;
+  string Email = 2;
+  string Subject = 3;
+  string Body = 4;
+};
+
+
+service Notice {
+  rpc SendEmail(SendEmailReq) returns(Empty) {};
+}
